@@ -3,6 +3,8 @@ import Results from "./Results";
 import useBreedList from "./useBreedList";
 import ThemeContext from "./ThemeContext";
 
+import ReactPaginate from "react-paginate";
+
 const ANIMALS = ["bird", "cat", "dog", "rabbit", "reptile"];
 
 const SearchParams = () => {
@@ -10,6 +12,7 @@ const SearchParams = () => {
   const [animal, updateAnimal] = useState("");
   const [breed, updateBreed] = useState("");
   const [pets, setPets] = useState([]);
+  const [pageCount, setpageCount] = useState(0);
   const [breeds] = useBreedList(animal);
   const [theme, setTheme] = useContext(ThemeContext);
 
@@ -21,13 +24,49 @@ const SearchParams = () => {
     const res = await fetch(
       `http://pets-v2.dev-apis.com/pets?animal=${animal}&location=${location}&breed=${breed}`
     );
-    const json = await res.json();
+    const data = await res.json();
+    const total = data.numberOfResults;
+    setpageCount(total / 10);
 
-    setPets(json.pets);
+    setPets(data.pets);
   }
+  const handlePageClick = async (data) => {
+    console.log(data.selected);
+    let currentPage = data.selected;
+
+    const petsFromServer = await fetchPets(currentPage);
+    setPets(petsFromServer);
+  };
+
+  const fetchPets = async (currentPage) => {
+    const res = await fetch(
+      `http://pets-v2.dev-apis.com/pets?animal=${animal}&location=${location}&breed=${breed}&page=${currentPage}`
+    );
+    const data = await res.json();
+    return data.pets;
+  };
 
   return (
     <div className="search-params">
+      <ReactPaginate
+        previousLabel={"previous"}
+        nextLabel={"next"}
+        breakLabel={"..."}
+        pageCount={pageCount}
+        marginPagesDisplayed={2}
+        pageRangeDisplayed={2}
+        onPageChange={handlePageClick}
+        containerClassName={"pagination justify-content-center "}
+        pageClassName={"page-item"}
+        pageLinkClassName={"page-link"}
+        previousClassName={"page-item"}
+        previousLinkClassName={"page-link"}
+        nextClassName={"page-item"}
+        nextLinkClassName={"page-link"}
+        breakClassName={"page-item"}
+        breakLinkClassName={"page-link"}
+        activeClassName={"active"}
+      />
       <form
         onSubmit={(e) => {
           e.preventDefault();
